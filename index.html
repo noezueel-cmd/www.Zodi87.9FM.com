@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Radio Zodi 87.9 FM - Classic Edition</title>
+    <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        position: fixed;
+        overscroll-behavior: none;
+    }
+
+    body {
+        background-color: #1a1a1a;
+        background-image:
+            radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 80%),
+            radial-gradient(rgba(0, 0, 0, 0.9) 15%, transparent 20%),
+            radial-gradient(rgba(0, 0, 0, 0.9) 15%, transparent 20%);
+        background-size: 100% 100%, 4px 4px, 4px 4px;
+        background-position: 0 0, 0 0, 2px 2px;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+    }
+
+    .player-container {
+        width: 100%;
+        max-width: 380px;
+        height: 100%;
+        max-height: 640px;
+        background: #232323;
+        border: 4px solid #111111;
+        border-radius: 12px;
+        box-shadow:
+            inset 0 2px 3px rgba(255,255,255,0.1),
+            0 15px 35px rgba(0,0,0,0.8);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .top-info-bar {
+        background: linear-gradient(to bottom, #30353a 0%, #1e2225 100%);
+        border-bottom: 2px solid #111;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 15px;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.15);
+    }
+
+    .led-indicator {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 4px 4px, #ff5050, #7a0000);
+        box-shadow: 0 0 5px rgba(255, 80, 80, 0.8), inset 0 -2px 3px rgba(0,0,0,0.6);
+        transition: all 0.3s;
+    }
+
+    .led-indicator.playing {
+        background: radial-gradient(circle at 4px 4px, #00ff66, #005a10);
+        box-shadow: 0 0 8px rgba(0, 255, 102, 0.9), inset 0 -2px 3px rgba(0,0,0,0.6);
+    }
+
+    .country-selector {
+        background: transparent;
+        color: #d1d5db;
+        font-size: 0.9rem;
+        font-weight: bold;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        text-align: center;
+        max-width: 180px;
+        text-shadow: 0 -1px 0 rgba(0,0,0,0.8);
+    }
+
+    .country-selector option { background: #1e2225; color: #d1d5db; }
+
+    .display-screen {
+        background: #010c18;
+        margin: 15px;
+        border-radius: 6px;
+        border: 2px solid #000000;
+        padding: 15px;
+        box-shadow:
+            inset 0 5px 15px rgba(0,0,0,0.9),
+            0 1px 1px rgba(255,255,255,0.1);
+        background-image: linear-gradient(to bottom, rgba(0,140,255,0.15) 0%, transparent 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .display-screen::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 50%;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%);
+        pointer-events: none;
+        border-radius: 4px 4px 0 0;
+    }
+
+    .frequency-display {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        color: #40b3ff;
+        text-shadow: 0 0 10px rgba(0, 162, 255, 0.8), 0 0 20px rgba(0, 162, 255, 0.4);
+        font-family: monospace;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .frequency-display span:first-child {
+        font-size: 4.8rem;
+        letter-spacing: -1px;
+        font-family: 'Courier New', Courier, monospace;
+    }
+
+    .frequency-display span:last-child {
+        font-size: 1.3rem;
+        margin-left: 5px;
+        color: #3388cc;
+    }
+
+    .station-details {
+        font-size: 0.85rem;
+        color: #72b0df;
+        text-shadow: 0 0 5px rgba(0, 162, 255, 0.5);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-align: center;
+    }
+
+    .launched-tag {
+        font-size: 0.65rem;
+        color: rgba(0, 140, 255, 0.7);
+        text-shadow: 0 0 4px rgba(0, 140, 255, 0.4);
+        letter-spacing: 1.5px;
+        margin-top: 6px;
+        font-weight: bold;
+        font-family: monospace;
+    }
+
+    .dial-area {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        background: radial-gradient(circle, #2a2d32 0%, #15171a 100%);
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        border-top: 1px solid #111;
+        border-bottom: 1px solid #111;
+    }
+
+    .dial-scale {
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .rotary-knob-outer {
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: #121315;
+        padding: 8px;
+        box-shadow:
+            0 10px 20px rgba(0,0,0,0.6),
+            inset 0 1px 2px rgba(255,255,255,0.2);
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .rotary-knob {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: conic-gradient(
+            #eeeeee 0deg, #cccccc 45deg, #777777 90deg,
+            #dddddd 135deg, #cccccc 180deg, #777777 225deg,
+            #eeeeee 270deg, #888888 315deg, #eeeeee 360deg
+        );
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #999;
+        box-shadow:
+            inset 0 1px 3px rgba(255,255,255,0.8),
+            0 4px 8px rgba(0,0,0,0.4);
+    }
+
+    .power-button-center {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: linear-gradient(to bottom, #2a2a2a 0%, #151515 100%);
+        border: 2px solid #333;
+        box-shadow:
+            inset 0 2px 3px rgba(255,255,255,0.1),
+            0 2px 4px rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .power-button-center:active {
+        transform: scale(0.95);
+        background: #111;
+    }
+
+    .power-button-center svg {
+        width: 24px;
+        height: 24px;
+        fill: #555;
+        transition: fill 0.3s, filter 0.3s;
+    }
+
+    .power-button-center.on svg {
+        fill: #40b3ff;
+        filter: drop-shadow(0 0 4px rgba(0, 162, 255, 0.8));
+    }
+
+    .knob-indicator {
+        position: absolute;
+        top: 12px;
+        width: 4px;
+        height: 12px;
+        background: #008cff;
+        border-radius: 2px;
+        box-shadow: 0 0 4px rgba(0,140,255,0.8);
+        transform-origin: bottom center;
+    }
+
+    .dial-nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(to bottom, #3a3f44 0%, #222528 100%);
+        border: 1px solid #111;
+        box-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.15),
+            0 3px 5px rgba(0,0,0,0.5);
+        color: #bbb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+    }
+
+    .dial-nav-btn:active { background: #1e2124; color: #fff; }
+
+    .dial-nav-btn.prev { left: 20px; }
+    .dial-nav-btn.next { right: 20px; }
+
+    .bottom-dashboard {
+        background: linear-gradient(to bottom, #1b1e20 0%, #101214 100%);
+        border-top: 2px solid #000;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .presets-bar {
+        width: 100%;
+        display: flex;
+        justify-content: space-around;
+        border-bottom: 1px solid #222;
+        padding-bottom: 10px;
+        margin-bottom: 5px;
+    }
+
+    .preset-chip {
+        font-size: 1rem;
+        font-weight: bold;
+        color: #666;
+        cursor: pointer;
+        transition: color 0.2s;
+        font-family: monospace;
+    }
+
+    .preset-chip.active {
+        color: #40b3ff;
+        text-shadow: 0 0 6px rgba(0,162,255,0.6);
+    }
+
+    .listeners-wrapper {
+        font-size: 0.75rem;
+        color: #888;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .listeners-wrapper svg {
+        width: 12px;
+        height: 12px;
+        fill: #40b3ff;
+    }
+
+    .metadata-row {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 5px;
+        border-top: 1px solid #1e2225;
+    }
+
+    .clock-display {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #eee;
+        font-family: monospace;
+    }
+
+    .date-display {
+        font-size: 0.75rem;
+        color: #666;
+        text-transform: uppercase;
+    }
+    </style>
+</head>
+<body>
+
+    <div class="player-container">
+        <div class="top-info-bar">
+            <div id="statusDot" class="led-indicator"></div>
+
+            <select id="countrySelect" class="country-selector">
+                <option value="AR" data-freq="87.9">&#x1F1E6;&#x1F1F7; RNE - ARGENTINA</option>
+                <option value="BO" data-freq="88.5">&#x1F1E7;&#x1F1F4; RNE - BOLIVIA</option>
+                <option value="BR" data-freq="89.1">&#x1F1E7;&#x1F1F7; RNE - BRASIL</option>
+                <option value="CL" data-freq="86.3">&#x1F1E8;&#x1F1F1; RNE - CHILE</option>
+                <option value="CO" data-freq="88.9">&#x1F1E8;&#x1F1F4; RNE - COLOMBIA</option>
+                <option value="EC" data-freq="85.5">&#x1F1EA;&#x1F1E8; RNE - ECUADOR</option>
+                <option value="US" data-freq="89.9">&#x1F1FA;&#x1F1F8; RNE - ESTADOS UNIDOS</option>
+                <option value="MX" data-freq="87.5">&#x1F1F2;&#x1F1FD; RNE - M&#xC9;XICO</option>
+                <option value="PA" data-freq="86.9">&#x1F1F5;&#x1F1E6; RNE - PANAM&#xC1;</option>
+                <option value="PE" data-freq="89.5">&#x1F1F5;&#x1F1EA; RNE - PER&#xDA;</option>
+                <option value="PY" data-freq="87.3">&#x1F1F5;&#x1F1FE; RNE - PARAGUAY</option>
+                <option value="UY" data-freq="88.7">&#x1F1FA;&#x1F1FE; RNE - URUGUAY</option>
+                <option value="VE" data-freq="88.1">&#x1F1FB;&#x1F1EA; RNE - VENEZUELA</option>
+                <option value="ES" data-freq="87.7">&#x1F1EA;&#x1F1F8; RNE - ESPA&#xD1;A</option>
+                <option value="GT" data-freq="89.3">&#x1F1EC;&#x1F1F9; RNE - GUATEMALA</option>
+                <option value="SV" data-freq="89.7">&#x1F1F8;&#x1F1FB; RNE - EL SALVADOR</option>
+                <option value="HN" data-freq="87.1">&#x1F1ED;&#x1F1F3; RNE - HONDURAS</option>
+                <option value="NI" data-freq="88.3">&#x1F1F3;&#x1F1EE; RNE - NICARAGUA</option>
+                <option value="CR" data-freq="86.5">&#x1F1E8;&#x1F1F7; RNE - COSTA RICA</option>
+                <option value="CU" data-freq="85.7">&#x1F1E8;&#x1F1FA; RNE - CUBA</option>
+                <option value="DO" data-freq="85.9">&#x1F1E9;&#x1F1F4; RNE - REP. DOMINICANA</option>
+                <option value="PR" data-freq="86.1">&#x1F1F5;&#x1F1F7; RNE - PUERTO RICO</option>
+            </select>
+
+            <div style="width: 14px; height: 14px;"></div>
+        </div>
+
+        <div class="display-screen">
+            <div class="frequency-display">
+                <span id="freqNum">87.9</span>
+                <span>MHz</span>
+            </div>
+            <div id="stationName" class="station-details">Zodi Radio</div>
+            <div id="statusText" style="font-size: 0.75rem; color: #40b3ff; font-weight: bold; margin-top: 4px;">APAGADO</div>
+
+            <div class="launched-tag">ON AIR SINCE: 01 JUL 2026</div>
+        </div>
+
+        <div class="dial-area">
+            <button class="dial-nav-btn prev" id="prevBtn" title="Anterior">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg>
+            </button>
+
+            <div class="dial-scale">
+                <div class="rotary-knob-outer">
+                    <div class="rotary-knob" id="rotaryKnob">
+                        <div class="knob-indicator" id="knobIndicator"></div>
+
+                        <div id="playBtn" class="power-button-center" title="Reproducir/Pausar">
+                            <svg id="playIcon" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="dial-nav-btn next" id="nextBtn" title="Siguiente">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg>
+            </button>
+        </div>
+
+        <div class="bottom-dashboard">
+            <div class="presets-bar">
+                <span class="preset-chip" id="p100_1">100.1</span>
+                <span class="preset-chip" id="p95_9">95.9</span>
+                <span class="preset-chip" id="p100_7">100.7</span>
+                <span class="preset-chip active" id="pActive">87.9</span>
+            </div>
+
+            <div class="listeners-wrapper">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+                </svg>
+                <span id="oyentesTexto">--</span>
+            </div>
+
+            <div class="metadata-row">
+                <div id="liveDate" class="date-display">Cargando...</div>
+                <div id="liveClock" class="clock-display">00:00:00</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRANSMISIÓN CONTINUA: audio único, completo -->
+    <audio id="radioAudio" preload="auto" src="https://www.dropbox.com/scl/fi/gtmspje0l1h1zc6fdpn85/completo.m4a?rlkey=zij46y6gy1tbrc0ba6lt97g2n&st=gtii6px8&raw=1"></audio>
+
+    <script>
+    const audio = document.getElementById('radioAudio');
+    const playBtn = document.getElementById('playBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const statusText = document.getElementById('statusText');
+    const statusDot = document.getElementById('statusDot');
+    const liveClock = document.getElementById('liveClock');
+    const liveDate = document.getElementById('liveDate');
+    const oyentesTexto = document.getElementById('oyentesTexto');
+    const freqNum = document.getElementById('freqNum');
+    const stationName = document.getElementById('stationName');
+    const countrySelect = document.getElementById('countrySelect');
+    const knobIndicator = document.getElementById('knobIndicator');
+    const pActivePreset = document.getElementById('pActive');
+
+    let currentFrequency = 87.9;
+    let targetFrequency = 87.9;
+    const minFrequency = 85.0;
+    const maxFrequency = 90.0;
+
+    let audioCtx = null;
+    let noiseNode = null;
+    let gainNode = null;
+    let isPlayingState = false;
+
+    // ─── HORARIO DE TRANSMISIÓN ───────────────────────────────
+    const HORA_INICIO = 6;
+    const HORA_FIN = 24;
+
+    function getHoraArgentina() {
+        const ahora = new Date();
+        const opciones = { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false };
+        const tiempoStr = ahora.toLocaleTimeString("es-AR", opciones);
+        const [h, m, s] = tiempoStr.split(':').map(Number);
+        return { hora: h, minuto: m, segundo: s, segundosDelDia: h * 3600 + m * 60 + s };
+    }
+
+    function dentroDeHorario() {
+        const { hora } = getHoraArgentina();
+        return hora >= HORA_INICIO && hora < HORA_FIN;
+    }
+
+    // ═══ DETECCIÓN AUTOMÁTICA DEL PAÍS DEL OYENTE ═══
+    // Cada oyente ve su propia emisora al entrar: Argentina 87.9, Ecuador 85.5, etc.
+    const ZONA_A_PAIS = {
+        'America/Argentina/Buenos_Aires': 'AR', 'America/Argentina/Cordoba': 'AR',
+        'America/Argentina/Rosario': 'AR', 'America/Argentina/Mendoza': 'AR',
+        'America/Argentina/Tucuman': 'AR', 'America/Argentina/La_Rioja': 'AR',
+        'America/Argentina/San_Juan': 'AR', 'America/Argentina/Jujuy': 'AR',
+        'America/Argentina/Rio_Gallegos': 'AR', 'America/Argentina/Ushuaia': 'AR',
+        'America/Argentina/Salta': 'AR', 'America/Argentina/Catamarca': 'AR',
+        'America/Argentina/San_Luis': 'AR',
+        'America/La_Paz': 'BO',
+        'America/Sao_Paulo': 'BR', 'America/Rio_de_Janeiro': 'BR', 'America/Brasilia': 'BR',
+        'America/Manaus': 'BR', 'America/Fortaleza': 'BR', 'America/Recife': 'BR',
+        'America/Bahia': 'BR', 'America/Belem': 'BR', 'America/Campo_Grande': 'BR',
+        'America/Cuiaba': 'BR', 'America/Porto_Velho': 'BR', 'America/Boa_Vista': 'BR',
+        'America/Maceio': 'BR', 'America/Araguaina': 'BR', 'America/Santarem': 'BR',
+        'America/Noronha': 'BR',
+        'America/Santiago': 'CL', 'America/Punta_Arenas': 'CL', 'Pacific/Easter': 'CL',
+        'America/Bogota': 'CO',
+        'America/Guayaquil': 'EC', 'America/Quito': 'EC', 'Pacific/Galapagos': 'EC',
+        'America/New_York': 'US', 'America/Chicago': 'US', 'America/Denver': 'US',
+        'America/Los_Angeles': 'US', 'America/Anchorage': 'US', 'Pacific/Honolulu': 'US',
+        'America/Phoenix': 'US', 'America/Miami': 'US', 'America/Detroit': 'US',
+        'America/Mexico_City': 'MX', 'America/Cancun': 'MX', 'America/Merida': 'MX',
+        'America/Monterrey': 'MX', 'America/Tijuana': 'MX', 'America/Chihuahua': 'MX',
+        'America/Hermosillo': 'MX', 'America/Mazatlan': 'MX', 'America/Ojinaga': 'MX',
+        'America/Panama': 'PA',
+        'America/Lima': 'PE',
+        'America/Asuncion': 'PY',
+        'America/Montevideo': 'UY',
+        'America/Caracas': 'VE',
+        'Europe/Madrid': 'ES', 'Atlantic/Canary': 'ES', 'Africa/Ceuta': 'ES',
+        'America/Guatemala': 'GT',
+        'America/El_Salvador': 'SV',
+        'America/Tegucigalpa': 'HN',
+        'America/Managua': 'NI',
+        'America/Costa_Rica': 'CR',
+        'America/Havana': 'CU',
+        'America/Santo_Domingo': 'DO',
+        'America/Puerto_Rico': 'PR'
+    };
+
+    function detectarPaisOyente() {
+        // Método 1: zona horaria del dispositivo
+        try {
+            const zona = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (zona && ZONA_A_PAIS[zona]) return ZONA_A_PAIS[zona];
+        } catch (e) {}
+        // Método 2: idioma/región del navegador (ej: "es-EC" → EC)
+        try {
+            const partes = (navigator.language || '').split('-');
+            if (partes.length > 1) {
+                const codigo = partes[1].toUpperCase();
+                if (ZONA_A_PAIS_PAIS_VALIDO(codigo)) return codigo;
+            }
+        } catch (e) {}
+        // Método 3: Argentina por defecto (emisora principal)
+        return 'AR';
+    }
+
+    function ZONA_A_PAIS_PAIS_VALIDO(codigo) {
+        return ['AR','BO','BR','CL','CO','EC','US','MX','PA','PE','PY','UY','VE','ES','GT','SV','HN','NI','CR','CU','DO','PR'].indexOf(codigo) !== -1;
+    }
+
+    // Aplica la emisora del país detectado: frecuencia del selector y del dial
+    function aplicarEmisoraDelPais(codigoPais) {
+        const opcion = countrySelect.querySelector(`option[value="${codigoPais}"]`);
+        if (!opcion) return;
+        countrySelect.value = codigoPais;
+        targetFrequency = parseFloat(opcion.getAttribute('data-freq'));
+        currentFrequency = targetFrequency;
+        actualizarOyentes();
+        actualizarInterfazDial();
+    }
+
+    function segundosDesdeInicioTransmision() {
+        const { segundosDelDia } = getHoraArgentina();
+        return segundosDelDia - (HORA_INICIO * 3600);
+    }
+
+    function initStaticNoise() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const bufferSize = 2 * audioCtx.sampleRate;
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+
+        noiseNode = audioCtx.createBufferSource();
+        noiseNode.buffer = noiseBuffer;
+        noiseNode.loop = true;
+
+        gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+
+        noiseNode.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        noiseNode.start();
+    }
+
+    function setStaticVolume(volume) {
+        if (gainNode) {
+            gainNode.gain.setTargetAtTime(volume, audioCtx.currentTime, 0.05);
+        }
+    }
+
+    // ═══ SINCRONÍA POR RELOJ (audio único) ═══
+    // La posición del audio se calcula según la hora argentina:
+    // todos los oyentes escuchan lo mismo a la misma hora.
+    let duracionAudio = 0;
+
+    function sincronizarConReloj() {
+        if (!duracionAudio || duracionAudio <= 0) return;
+        const segundosTranscurridos = segundosDesdeInicioTransmision();
+        if (segundosTranscurridos < 0) return;
+
+        const tiempoActualAudio = segundosTranscurridos % duracionAudio;
+
+        if (Math.abs(audio.currentTime - tiempoActualAudio) > 1.5) {
+            audio.currentTime = tiempoActualAudio;
+        }
+    }
+
+    const cronogramaOyentes = {
+        0: 3900, 1: 3000, 2: 2000, 3: 1500, 4: 1000, 5: 800,
+        6: 800, 7: 800, 8: 800, 9: 800, 10: 2100, 11: 1700,
+        12: 2004, 13: 2500, 14: 3000, 15: 3020, 16: 3800, 17: 4330,
+        18: 5000, 19: 5700, 20: 6000, 21: 5800, 22: 5100, 23: 4778
+    };
+
+    function obtenerOyentesPorHora() {
+        const { hora } = getHoraArgentina();
+        const oyentesBase = cronogramaOyentes[hora] || 800;
+        const variacion = Math.floor(Math.random() * 31) - 15;
+        return Math.max(10, oyentesBase + variacion);
+    }
+
+    function actualizarOyentes() {
+        if (!isPlayingState) {
+            oyentesTexto.textContent = "--";
+            return;
+        }
+        if (!dentroDeHorario()) {
+            oyentesTexto.textContent = "0 activos (FM)";
+            return;
+        }
+        const oyentesActuales = obtenerOyentesPorHora();
+        oyentesTexto.textContent = oyentesActuales.toLocaleString('es-AR') + " activos (FM)";
+    }
+
+    function actualizarReloj() {
+        const ahora = new Date();
+
+        const opcionesTiempo = { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false };
+        liveClock.textContent = ahora.toLocaleTimeString('es-AR', opcionesTiempo);
+
+        const opcionesFecha = { timeZone: "America/Argentina/Buenos_Aires", weekday: 'short', day: 'numeric', month: 'short' };
+        liveDate.textContent = ahora.toLocaleDateString('es-AR', opcionesFecha).toUpperCase() + ' • GUALEGUAYCHÚ';
+    }
+
+    actualizarReloj();
+    actualizarOyentes();
+    setInterval(actualizarReloj, 1000);
+    setInterval(actualizarOyentes, 8000);
+
+    // ═══ VIGILANTE DE HORARIO DE TRANSMISIÓN ═══
+    // 24:00 → se corta la música y queda solo el ruido de fondo (emisora apagada)
+    // 06:00 → la radio arranca sola, sincronizada con el reloj
+    let estabaEnHorario = dentroDeHorario();
+
+    function verificarHorarioTransmision() {
+        const enHorario = dentroDeHorario();
+
+        if (!isPlayingState) {
+            estabaEnHorario = enHorario;
+            return;
+        }
+
+        if (enHorario && !estabaEnHorario) {
+            // Son las 06:00 (o el usuario entró al horario): sale al aire
+            sincronizarConReloj();
+            actualizarInterfazDial();
+            actualizarOyentes();
+        } else if (!enHorario && estabaEnHorario) {
+            // Pasó la medianoche: se corta la transmisión, ruido de fondo
+            audio.pause();
+            setStaticVolume(0.18);
+            stationName.style.color = "#444";
+            statusText.textContent = "FUERA DE HORARIO";
+            statusText.style.color = "#ff5050";
+            oyentesTexto.textContent = "0 activos (FM)";
+        }
+
+        estabaEnHorario = enHorario;
+    }
+
+    setInterval(verificarHorarioTransmision, 5000);
+
+    function actualizarMediaSession() {
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: `Radio Zodi ${currentFrequency.toFixed(1)} MHz`,
+                artist: stationName.textContent,
+                album: 'Classic Edition'
+            });
+
+            navigator.mediaSession.playbackState = isPlayingState ? "playing" : "paused";
+            navigator.mediaSession.setActionHandler('play', togglePlay);
+            navigator.mediaSession.setActionHandler('pause', togglePlay);
+        }
+    }
+
+    function actualizarInterfazDial() {
+        freqNum.textContent = currentFrequency.toFixed(1);
+        pActivePreset.textContent = currentFrequency.toFixed(1);
+
+        const rangoTotal = maxFrequency - minFrequency;
+        const progreso = (currentFrequency - minFrequency) / rangoTotal;
+        const rotacionMuesca = (progreso * 270) - 135;
+        knobIndicator.style.transform = `rotate(${rotacionMuesca}deg)`;
+
+        // Sincronizar la posición del audio con la hora argentina
+        sincronizarConReloj();
+
+        const a = audio;
+
+        if (isPlayingState) {
+            statusDot.className = "led-indicator playing";
+
+            if (!dentroDeHorario()) {
+                a.pause();
+                setStaticVolume(0.18);
+                stationName.style.color = "#444";
+                statusText.textContent = "FUERA DE HORARIO";
+                statusText.style.color = "#ff5050";
+                actualizarMediaSession();
+                return;
+            }
+
+            const distancia = Math.abs(currentFrequency - targetFrequency);
+
+            if (distancia <= 0.5) {
+                const factorSeñal = 1 - (distancia / 0.5);
+
+                a.volume = factorSeñal;
+                a.muted = false;
+
+                const volumenRuido = (1 - factorSeñal) * 0.18;
+                setStaticVolume(volumenRuido);
+
+                sincronizarConReloj();
+
+                a.play().catch(()=>{});
+
+                if (distancia.toFixed(1) === "0.0") {
+                    stationName.style.color = "#72b0df";
+                    statusText.textContent = "EN VIVO";
+                    statusText.style.color = "#40b3ff";
+                } else {
+                    stationName.style.color = "#444";
+                    statusText.textContent = "SEÑAL DÉBIL...";
+                    statusText.style.color = "#ffcc00";
+                }
+            } else {
+                a.pause();
+                setStaticVolume(0.18);
+
+                stationName.style.color = "#444";
+                statusText.textContent = "BUSCANDO SEÑAL...";
+                statusText.style.color = "#ffcc00";
+            }
+            actualizarMediaSession();
+        } else {
+            audio.pause();
+            setStaticVolume(0.06);
+        }
+    }
+
+    function reproducirRadio() {
+        isPlayingState = true;
+        if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+            initStaticNoise();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+        document.querySelector('.power-button-center').classList.add('on');
+        actualizarInterfazDial();
+        actualizarMediaSession();
+    }
+
+    function togglePlay() {
+        if (!isPlayingState) {
+            reproducirRadio();
+        } else {
+            isPlayingState = false;
+            audio.pause();
+            document.querySelector('.power-button-center').classList.remove('on');
+            statusText.textContent = "APAGADO";
+            statusText.style.color = "#666";
+            statusDot.className = "led-indicator";
+            actualizarMediaSession();
+        }
+    }
+
+    // Cuando termina el audio, vuelve a empezar sincronizado con el reloj
+    // (radio continua: nadie nota el reinicio)
+    audio.addEventListener('ended', () => {
+        if (isPlayingState && Math.abs(currentFrequency - targetFrequency) <= 0.5 && dentroDeHorario()) {
+            sincronizarConReloj();
+            audio.play().catch(()=>{});
+        }
+    });
+
+    audio.addEventListener('loadedmetadata', () => {
+        duracionAudio = audio.duration;
+        sincronizarConReloj();
+    });
+
+    // ═══ CONTROLES DEL PANEL ═══
+    // Botón de encendido/apagado del centro del dial
+    playBtn.addEventListener('click', togglePlay);
+
+    // Selector de país: cambia la frecuencia objetivo
+    countrySelect.addEventListener('change', (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        targetFrequency = parseFloat(selectedOption.getAttribute('data-freq'));
+        actualizarOyentes();
+        actualizarInterfazDial();
+    });
+
+    // Flechas del dial: bajar/subir 0.1 MHz
+    prevBtn.addEventListener('click', () => {
+        if (currentFrequency > minFrequency) {
+            currentFrequency = Math.max(minFrequency, currentFrequency - 0.1);
+            actualizarInterfazDial();
+        }
+    });
+
+    nextBtn.addEventListener('click', () => {
+        if (currentFrequency < maxFrequency) {
+            currentFrequency = Math.min(maxFrequency, currentFrequency + 0.1);
+            actualizarInterfazDial();
+        }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && isPlayingState && Math.abs(currentFrequency - targetFrequency) === 0 && dentroDeHorario()) {
+            sincronizarConReloj();
+        }
+    });
+
+    // ═══ AL ABRIR LA PÁGINA: la radio siempre inicia en ARGENTINA 87.9 ═══
+    // (emisora principal; el oyente puede cambiar de país con el selector)
+    window.addEventListener('DOMContentLoaded', () => {
+        aplicarEmisoraDelPais('AR');
+    });
+    </script>
+</body>
+</html>
